@@ -9,8 +9,8 @@ I am not a CUDA expert.
 ## External tools
 
 The code makes a fundamental use of [thrust](https://docs.nvidia.com/cuda/thrust/index.html) in two cases: 
-	- To compute the average polarization of the system (function `compute_phi` in file `system.cu`)
-	- To sort the box list `devBox` with `thrust::sort_by_key` in `vicsek.cu`.
+- To compute the average polarization of the system (function `compute_phi` in file `system.cu`)
+- To sort the box list `devBox` with `thrust::sort_by_key` in `vicsek.cu`.
 
 Also:
 
@@ -21,16 +21,16 @@ Also:
 
 From the *source* folder, the code can be compiled with
 
-`
+```
 nvcc system.cu vicsek.cu -O3 -lcuda -lcurand -lgsl -lgslcblas -o ../gpuvs
-`
+```
 ## System parameters and input
 
 Upon compilation the program can be executed from the workspace with
 
-`
+```
 ./gpuvs <flag> <L> <rho> <eta>
-`
+```
 where
 
 - *flag* is a string to identify output files
@@ -44,9 +44,10 @@ The box size for easy particle location is fixed to be 1.
 
 A typical call to the program could be
 
-`
+```
 ./gpuvs_v1 experiment_A 128 2.0 0.62
-`
+```
+
 Other system parameters need to be changed directly in the code:
 
 - The simulation time `Tf` and transient `trans` are defined in the `main()` function in `vicsek.cu`. This is, by default, `Tf=2.5e5, trans=5e4`.
@@ -67,51 +68,51 @@ and also with the "flag" string passed to the program.
 
 Using **gnuplot** one can plot the time series of phi with:
 
-`
+```
 plot 'timeseries/<filename>.bin' '%double' using 0:1 with lines
-`
+```
 
 The snapshots of the system can be also plotted using, for instance,
 
-`
+```
 plot 'snapshots/<filename>.bin' binary format='%double%double%double%double' using 1:2:(atan2($4,$3)) with dots lc palette
-`
+```
 
 ## Algorithm 
 
 The program is based on the usage of **bitxus** in **boxes**, i.e., [cell lists](https://en.wikipedia.org/wiki/Cell_lists).
 
-A **Bitxu** is a struct defined in `system.cuh` that contains all the information of each particle of the Vicsek model, namely, its box location, position, velocity, and local polarization.
+A **Bitxu** is a `struct` defined in `system.cuh` that contains all the information of each particle of the Vicsek model, namely, its box location, position, velocity, and local polarization.
 The word *bitxu* comes from a direct (and wrong) spelling of the spanish word "bicho" (bug) in catalan pronunciation.
 If you are confused by the word, you can think that a *bitxu* is a *particle*, *bird*, *fish*, *bacteria*, *sheep*, or whatever your are trying to model.
 
 A **box** is not explicitly defined in the code, and is one of the L^2 squares of unit size in the lattice. This is the *cell* in cell lists.
 
-The Vicsek model is a array of bitxus, that in our code is called `devNodes`.
-Each bitxu is at each time in one and only one box. Knowing what box a *bitxu* belongs to is easy to compute, and it is at all times stored in `devNodes[i].idbox`.
+The Vicsek model is an array of "bitxus", that in our code is called `devNodes`.
+Each *bitxu* is at each time in one and only one box. Knowing what box a *bitxu* belongs to is easy to compute, and it is at all times stored in `devNodes[i].idbox`.
 
 However, since *bitxus* move in time, knowing how many and which *bitxus* are in a given box at a specific moment is difficult.
 This is the main problem to be solved.
-To do it I create a list called `devBox`.
+To address it I create a list called `devBox`.
 Counterintuitively, this is not a list of boxes, but a list of *bitxus*'.
 This list needs to be **sorted at all times**.
 Therefore, in a system with 10 *bitxus* and 4 boxes, `devBox` could look like
-`
+```
 devBox=[ 0 0 1 1 1 2 3 3 3 3]
-`
+```
 where it is clear that we have 2 particles in box 0, and 3 in box 1, 1 in box 2 and 4 in box 3.
 
 Since this list is **sorted at all times**, in order to access the elements of `devBox` easily we can just define two arrays, called `devIni` and `devEnd`, of size L^2, i.e., the total number of boxes.
 These vectors respectively indicate the initial and final index of the particles in a given box of `devBox`.
 
 Therefore, in our previous example,
-`
+```
 devIni=[0 2 5 6]
-`
+```
 and 
-`
+```
 devEnd=[1 4 5 9]
-`
+```
 since the first *bitxu* of box 0 is referenced at `devBox[0]` and its final *bitxu* is referenced at `devBox[2]`,
 whereas for box 2 we only have one subject which is at position 5, and therefore `devIni[2]=devEnd[2]=5`.
 
