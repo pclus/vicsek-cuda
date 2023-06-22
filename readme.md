@@ -1,14 +1,12 @@
 # CUDA Vicsek model simulator
 
-For details on the model and usage of the noise refer to: [Clusella and Pastor-Satorras, Chaos 31, 043116 (2021)](https://doi.org/10.1063/5.0046926). This code is for the Vicsek model defined on Euclidian space only.
-
-## Disclaimer
-
-I am not a CUDA expert.
+For details on the model and usage of the different types of noise refer to: [Clusella and Pastor-Satorras, Chaos 31, 043116 (2021)](https://doi.org/10.1063/5.0046926). 
+**Cite this work if you use this or parts of this code.**
+This software is for the Vicsek model defined on Euclidian space only. 
 
 ## External tools
 
-The code makes a fundamental use of [thrust](https://docs.nvidia.com/cuda/thrust/index.html) in two cases: 
+The software makes a fundamental use of [thrust](https://docs.nvidia.com/cuda/thrust/index.html) in two cases: 
 - To compute the average polarization of the system (function `compute_phi` in file `system.cu`)
 - To sort the box list `devBox` with `thrust::sort_by_key` in `vicsek.cu`.
 
